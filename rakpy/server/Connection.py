@@ -84,7 +84,7 @@ class Connection:
                 pk.encode()
                 self.recoveryQueue[pk.sequenceNumber] = pk
                 del self.packetToSend[key]
-                self.sendPacket(pk)
+                #self.sendPacket(pk)
                 limit -= 1
                 if limit <= 0:
                     break
@@ -95,7 +95,7 @@ class Connection:
                 if len(indexes) == 0:
                     del self.needACK[identifierACK]
                     # Todo add Notify ACK
-        for seq, pk in self.recoveryQueue.items():
+        for seq, pk in dict(self.recoveryQueue).items():
             if pk.sendTime < (timeNow() - 8):
                 self.packetToSend.append(pk)
                 del self.recoveryQueue[seq]
@@ -105,7 +105,7 @@ class Connection:
                 del self.receivedWindow[seq]
             else:
                 break
-        self.sendQueue()
+        self.sendTheQueue()
         
     def disconnect(self, reason = "unknown"):
         self.server.removeConnection(self, reason)
@@ -260,7 +260,7 @@ class Connection:
             return
         length = len(self.sendQueue)
         if (length + pk.getTotalLength()) > self.mtuSize:
-            self.sendQueue()
+            self.sendTheQueue()
         if pk.needAck:
             self.sendQueue.packets.append(deepcopy(pk))
             pk.needACK = False
@@ -332,8 +332,8 @@ class Connection:
             pk.buffer = BinaryStream.buffer
             self.receivePacket(pk)
     
-    def sendQueue(self):
-        if len(DataPacket.packets) > 0:
+    def sendTheQueue(self):
+        if len(self.sendQueue.packets) > 0:
             self.sendQueue.sequenceNumber = self.sendSequenceNumber
             self.sendSequenceNumber += 1
             self.sendPacket(self.sendQueue)
